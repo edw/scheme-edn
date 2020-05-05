@@ -1,0 +1,139 @@
+;;; EDN Reader
+;;; Edwin Watkeys
+;;; edw@poseur.com
+;;; 05 MAY 2020
+
+(define (make-float i f e)
+  (string->number (string-append i "." f "e" e)))
+
+(define-grammar edn
+
+  (symbol-rest ((or ,symbol-first #\# #\: numeric)))
+  (symbol-first ((or #\. #\* #\+ #\! #\- #\_ #\? #\$ #\% #\& #\= #\< #\> alphabetic)))
+  (symbol ((: (-> ns-first ,symbol-first) (-> ns-rest (* ,symbol-rest))
+              #\/ (-> name-first ,symbol-first) (-> name-rest (* ,symbol-rest)))
+           (list 'symbol (list (apply string ns-first ns-rest)
+                               (apply string name-first name-rest))))
+          ((: (-> first ,symbol-first) (-> rest (* ,symbol-rest)))
+           (list 'symbol (list #f (apply string first rest)))))
+
+  (keyword-rest ((or ,keyword-first #\# #\:)))
+  (keyword-first ((or #\. #\* #\+ #\! #\- #\_ #\? #\$ #\% #\& #\= #\< #\> alphabetic numeric)))
+  (keyword ((: ":" (-> ns-first ,symbol-first) (-> ns-rest (* ,symbol-rest))
+               #\/ (-> name-first ,keyword-first) (-> name-rest (* ,keyword-rest)))
+            (list 'keyword (list (apply string ns-first ns-rest)
+                                 (apply string name-first name-rest))))
+           ((: ":" (-> first ,keyword-first) (-> rest (* ,keyword-rest)))
+            (list 'keyword (list #f (apply string first rest)))))
+
+  (ratio ((-> els (: (-> numer ,fp-int) "/" (-> denom ,fp-int)))
+          (/ (string->number numer) (string->number denom))))
+
+  (fp-int ((: "+" (-> first (/ "19")) (-> rest (+ numeric))) (apply string first rest))
+          ((: "+" (-> d numeric)) (string d))
+          ((: "-" (-> first (/ "19")) (-> rest (+ numeric))) (apply string #\- first rest))
+          ((: "-" (-> d numeric)) (string #\- d))
+          ((: (-> first (/ "19")) (-> rest (+ numeric))) (apply string first rest))
+          ((-> d numeric) (string d)))
+
+  (fp-frac ((: "." (-> ds (+ numeric))) (apply string ds)))
+
+  (fp-exp ((: "e+" (-> ds (+ numeric))) (apply string ds))
+          ((: "e-" (-> ds (+ numeric))) (apply string #\- ds))
+          ((: "e" (-> ds (+ numeric))) (apply string ds))
+          ((: "E+" (-> ds (+ numeric))) (apply string ds))
+          ((: "E-" (-> ds (+ numeric))) (apply string #\- ds))
+          ((: "E" (-> ds (+ numeric))) (apply string ds)))
+
+  (float ((: (=> ds ,fp-int) "M") (list 'big-decimal ds))
+         ((: (-> i ,fp-int) (-> f ,fp-frac) (-> e ,fp-exp) "M")
+          (list 'big-decimal (list i f e)))
+         ((: (-> i ,fp-int) (-> e ,fp-exp) "M") (list 'big-decimal (list i ".0" e)))
+         ((: (-> i ,fp-int) (-> f ,fp-frac) "M") (list 'big-decimal (list i f "0")))
+         ((: (-> i ,fp-int) (-> f ,fp-frac) (-> e ,fp-exp)) (make-float i f e))
+         ((: (-> i ,fp-int) (-> e ,fp-exp)) (make-float i ".0" e))
+         ((: (-> i ,fp-int) (-> f ,fp-frac)) (make-float i f "0")))
+
+  (number (,float)
+          (,ratio)
+          ((: (-> s ,fp-int) "N") (list 'big-integer s))
+          ((-> s ,fp-int) (string->number s)))
+
+  (edn-set ((: "#{" ,space "}") (list 'set '()))
+           ((: "#{}") (list 'set '()))
+           ((: "#{" (-> entries (* ,edn-value)) ,space "}")
+            (list 'set entries))
+           ((: "#{" (-> entries (* ,edn-value)) "}")
+            (list 'set entries)))
+
+  (edn-sequence ((: "(" ,space ")") (list 'sequence '()))
+                ("()" (list 'sequence '()))
+                ((: "(" (-> entries (* ,edn-value)) (? ,space) ")")
+                 (list 'sequence entries)))
+
+  (edn-vector ((: "[" ,space "]") (vector))
+              ("[]" (vector))
+              ((: "[" (-> entries (* ,edn-value)) (? ,space) "]")
+               (apply vector entries)))
+
+  (map-entry ((: (-> key ,edn-value) (-> value ,edn-value))
+              (list key value)))
+
+  (edn-map ((: "{" ,space "}") (list 'map '()))
+           ("{}" (list 'map '()))
+           ((: "{" (-> entries (* ,map-entry)) ,space "}")
+            (list 'map entries))
+           ((: "{" (-> entries (* ,map-entry)) "}")
+            (list 'map entries)))
+
+  (hexdigit ((or (/ "09") (/ "af") (/ "AF"))))
+
+  (character ("\\return" #\x0d)
+             ("\\newline" #\x0a)
+             ("\\space" #\x20)
+             ("\\tab" #\x09)
+             ("\\\\" #\\)
+             ((: "\\u" (-> ds (: ,hexdigit ,hexdigit ,hexdigit ,hexdigit)))
+              (integer->char (string->number (apply string ds) 16)))
+             ((: "\\" (-> c any)) c))
+
+  (edn-string-char ("\\n" (integer->char 10))
+                   ("\\t" (integer->char 9))
+                   ("\\r" (integer->char 13))
+                   ("\\\\" (integer->char 92))
+                   ("\\\"" (integer->char 34))
+                   ((-> c any) c))
+
+  (edn-string ("\"\"" "")
+              ((: "\"" (-> cs (+ ,edn-string-char)) "\"")
+               (list->string cs)))
+
+  (edn-atom ("true" #t)
+            ("false" #f)
+            ("nil" '())
+            ((-> atom (or ,keyword ,number ,symbol ,character ,edn-string)) atom))
+
+  (edn-collection (,edn-sequence)
+                  (,edn-set)
+                  (,edn-vector)
+                  (,edn-map))
+
+  (comment (";\n")
+           ((: ";"
+               (* ,(parse-char (lambda (ch) (not (= (char->integer ch) 10)))))
+               "\n")))
+
+  (discarded-value ((: "#_" ,edn-value)))
+  (actual-space ((+ (or ,(parse-char char-whitespace?) ","))))
+  (space ((+ (or ,comment ,actual-space ,discarded-value))))
+
+  (edn-actual-value ((: "#" (-> t ,symbol) (-> v ,edn-value))
+                     (list 'tagged-value (list t v)))
+                    ((: (=> e ,edn-atom)) e)
+                    ((: (=> e ,edn-collection)) e))
+
+  (edn-value ((: ,space (-> v ,edn-actual-value)) v)
+             ((-> v ,edn-actual-value) v)))
+
+(define (parse-edn str)
+  (parse edn-value str))
