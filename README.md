@@ -20,6 +20,12 @@ be called with
 [`call-with-parse`](http://synthcode.com/scheme/chibi/lib/chibi/parse.html#h3_call-with-parse)
 or other similar procedures in the `(chibi parse)` library.
 
+Additionally, the library exports predicates, accessors, and
+constructors for types that don't have exact analogs in Scheme or
+where the analogs are not nearly-universally supported. Of particular
+note, the library returns EDN `nil` as the value `edn-nil`, which can
+be tested for via `edn-nil?`.
+
 This implementation should parse any valid EDN document. Note,
 however, that `#inst`- and `#uuid`-tagged values are not parsed but
 passed as if they were user-defined tagged literals. Also, since
