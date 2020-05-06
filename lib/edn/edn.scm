@@ -49,14 +49,15 @@
   (ns edn-symbol-namespace)
   (name edn-symbol-name))
 
-(define edn-inst-symbol (make-edn-symbol #f "inst"))
-(define edn-uuid-symbol (make-edn-symbol #f "uuid"))
+(define-record-type <edn-inst>
+  (make-edn-inst value)
+  edn-inst?
+  (value edn-inst-value))
 
-(define (make-edn-inst str)
-  (make-edn-tagged-value edn-inst-symbol str))
-
-(define (make-edn-uuid str)
-  (make-edn-tagged-value edn-uuid-symbol str))
+(define-record-type <edn-uuid>
+  (make-edn-uuid value)
+  edn-uuid?
+  (value edn-uuid-value))
 
 (define-record-type <edn-keyword>
   (make-edn-keyword ns name)

@@ -13,7 +13,8 @@
           edn-big-decimal? edn-big-decimal-elements make-edn-big-decimal
           edn-big-integer? edn-big-integer-elements make-edn-big-integer
 
-          make-edn-inst make-edn-uuid
+          edn-inst? make-edn-inst edn-inst-value
+          edn-uuid? make-edn-uuid edn-uuid-value
 
           edn-tagged-value? edn-tagged-value-tag edn-tagged-value-value
           make-edn-tagged-value

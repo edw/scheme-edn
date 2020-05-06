@@ -82,4 +82,10 @@
                       "#inst \"1985-04-12T23:20:50.52Z\"")
 
             (test-edn (make-edn-uuid "f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
-                      "#uuid \"f81d4fae-7dec-11d0-a765-00a0c91e6bf6\""))
+                      "#uuid \"f81d4fae-7dec-11d0-a765-00a0c91e6bf6\"")
+
+            (test-assert
+                (let ((uuid (parse-edn "#uuid \"f81d4fae-7dec-11d0-a765-00a0c91e6bf6\"")))
+                  (and (edn-uuid? uuid)
+                       (equal? (edn-uuid-value uuid)
+                               "f81d4fae-7dec-11d0-a765-00a0c91e6bf6")))))

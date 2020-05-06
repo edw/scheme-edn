@@ -26,9 +26,7 @@ where the analogs are not nearly-universally supported. Of particular
 note, the library returns EDN `nil` as the value `edn-nil`, which can
 be tested for via `edn-nil?`.
 
-This implementation should parse any valid EDN document. Note,
-however, that `#inst`- and `#uuid`-tagged values are not parsed but
-passed as if they were user-defined tagged literals. Also, since
+This implementation should parse any valid EDN document. Also, since
 Clojure programs may emit ratio values, they are parsed into Scheme
 ratios despite their absence from the EDN standard. Finally, note that
 `parse-edn` will return `#f` on failure, which is also the result of
