@@ -184,5 +184,5 @@
   (edn-value ((: ,space (-> v ,edn-actual-value)) v)
              ((-> v ,edn-actual-value) v)))
 
-(define (parse-edn str)
-  (parse edn-value str))
+(define (parse-edn source)
+  (parse edn-value source))
