@@ -49,6 +49,15 @@
   (ns edn-symbol-namespace)
   (name edn-symbol-name))
 
+(define edn-inst-symbol (make-edn-symbol #f "inst"))
+(define edn-uuid-symbol (make-edn-symbol #f "uuid"))
+
+(define (make-edn-inst str)
+  (make-edn-tagged-value edn-inst-symbol str))
+
+(define (make-edn-uuid str)
+  (make-edn-tagged-value edn-uuid-symbol str))
+
 (define-record-type <edn-keyword>
   (make-edn-keyword ns name)
   edn-keyword?
@@ -176,7 +185,9 @@
   (actual-space ((+ (or ,(parse-char char-whitespace?) ","))))
   (space ((+ (or ,comment ,actual-space ,discarded-value))))
 
-  (edn-actual-value ((: "#" (-> t ,symbol) (-> v ,edn-value))
+  (edn-actual-value ((: "#inst" (-> v ,edn-value)) (make-edn-inst v))
+                    ((: "#uuid" (-> v ,edn-value)) (make-edn-uuid v))
+                    ((: "#" (-> t ,symbol) (-> v ,edn-value))
                      (make-edn-tagged-value t v))
                     ((: (=> e ,edn-atom)) e)
                     ((: (=> e ,edn-collection)) e))

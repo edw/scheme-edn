@@ -76,4 +76,10 @@
             (test-edn "" "\"\"")
             (test-edn "foo" "\"foo\"")
             (test-edn "foo\nbar" "\"foo\nbar\"")
-            (test-edn "foo\nbar" "\"foo\\nbar\""))
+            (test-edn "foo\nbar" "\"foo\\nbar\"")
+
+            (test-edn (make-edn-inst "1985-04-12T23:20:50.52Z")
+                      "#inst \"1985-04-12T23:20:50.52Z\"")
+
+            (test-edn (make-edn-uuid "f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
+                      "#uuid \"f81d4fae-7dec-11d0-a765-00a0c91e6bf6\""))
