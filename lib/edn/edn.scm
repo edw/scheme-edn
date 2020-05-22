@@ -12,16 +12,16 @@
 
 ;;> This library, (edn), exports parse-edn and edn-value. Parse-edn is
 ;;> procedure of one argument and parses the passed source, returning a
-;;> data structure representing the passed EDN or #f if parsing
-;;> fails. Edn-value is a parser combinator that can be called with
+;;> data structure representing the passed EDN. If parsing fails, an error
+;;> is raised. Edn-value is a parser combinator that can be called with
 ;;> call-with-parse or other similar procedures in the (chibi parse)
 ;;> library.
 
 ;;> Additionally, the library exports predicates, accessors, and
 ;;> constructors for types that don't have exact analogs in Scheme or
 ;;> where the analogs are not nearly-universally supported. Of
-;;> particular note, the library returns EDN nil as the value edn-nil,
-;;> which can be tested for via edn-nil?.
+;;> particular note, the library returns EDN nil as the Scheme
+;;> symbol nil.
 
 ;;> This implementation should parse any valid EDN document. Also,
 ;;> since Clojure programs may emit ratio values, they are parsed into
@@ -60,12 +60,6 @@
   (make-edn-big-integer els)
   edn-big-integer?
   (els edn-big-integer-elements))
-
-(define-record-type <edn-nil>
-  (make-edn-nil)
-  edn-nil?)
-
-(define edn-nil (make-edn-nil))
 
 (define-record-type <edn-tagged-value>
   (make-edn-tagged-value tag value)
@@ -199,7 +193,7 @@
 
   (edn-atom ("true" #t)
             ("false" #f)
-            ("nil" edn-nil)
+            ("nil" 'nil)
             ((-> atom (or ,keyword ,number ,symbol ,character ,edn-string)) atom))
 
   (edn-collection (,edn-sequence)
@@ -227,4 +221,8 @@
              ((-> v ,edn-actual-value) v)))
 
 (define (parse-edn source)
-  (parse edn-value source))
+  (call-with-parse edn-value source 0
+                   (lambda (result source index fail)
+                     result)
+                   (lambda e
+                     (error e))))

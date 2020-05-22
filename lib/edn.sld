@@ -6,7 +6,6 @@
 (define-library (edn)
   (import (scheme base) (scheme char) (chibi parse))
   (export parse-edn edn-value
-          edn-nil? edn-nil
           edn-sequence? edn-sequence-elements make-edn-sequence
           edn-map? edn-map-elements make-edn-map
           edn-set? edn-set-elements make-edn-set

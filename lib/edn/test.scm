@@ -10,6 +10,8 @@
 (define (run-tests)
   (test-group
    "EDN Tests"
+   (test-edn 'nil "nil")
+
    (test-edn (make-edn-map '((#t #f))) "{true false}")
 
    (test-edn (make-edn-map '()) "{,}")
