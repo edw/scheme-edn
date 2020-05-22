@@ -5,4 +5,5 @@
 
 (define-library (edn-test)
   (import (scheme base) (edn) (chibi test))
+  (export run-tests)
   (include "edn/test.scm"))

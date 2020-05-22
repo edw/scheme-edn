@@ -33,5 +33,5 @@ ratios despite their absence from the EDN standard. Finally, note that
 parsing the string `"false"`. If this is a problem, use the
 `call-with-parse` procedure metioned above.
 
-A test suite is included in the the `(edn-test)` library and will be
-executed on import.
+A test suite is included in the `(edn-test)` library. To execute it,
+evaluate `(run-tests)`.
